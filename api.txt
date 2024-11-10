@@ -1,0 +1,146 @@
+import React, { useState } from 'react';
+import { Form, Input, Row, Col, Modal, Button, message } from 'antd';
+import axios from 'axios';
+
+const ReusableModal = ({ open, onCancel, title, children }) => (
+  <Modal
+    title={title}
+    open={open}
+    onCancel={onCancel}
+    footer={null} // Remove the default footer
+  >
+    {children} {/* Render children inside modal */}
+  </Modal>
+);
+
+const App = () => {
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [confirmLoading, setConfirmLoading] = useState(false);
+
+  // Display the modal
+  const showModal = () => {
+    setIsModalVisible(true);
+  };
+
+  // Handle modal cancellation
+  const handleCancel = () => {
+    setIsModalVisible(false);
+  };
+
+  // Form submit handler
+  const onFinish = async (values: any) => {
+    console.log('Form Submitted:', values);
+    setConfirmLoading(true); // Show loading spinner on Submit button
+
+    try {
+      // Kirim data ke API (gunakan URL dan metode HTTP yang sesuai)
+      const response = await axios.post('https://your-api-endpoint.com/users', values);
+
+      // Handle success
+      console.log('API Response:', response.data);
+      setConfirmLoading(false);
+      setIsModalVisible(false); // Close modal after submission
+      message.success('User added successfully!');
+    } catch (error) {
+      // Handle error
+      console.error('Error submitting form:', error);
+      setConfirmLoading(false);
+      message.error('Failed to add user. Please try again.');
+    }
+  };
+
+  // Form submit failure handler (validation failure)
+  const onFinishFailed = (errorInfo: any) => {
+    console.log('Failed:', errorInfo);
+    message.error('Form submission failed!');
+  };
+
+  return (
+    <>
+      <Button type="primary" onClick={showModal}>
+        Open Modal
+      </Button>
+
+      <ReusableModal
+        title="Add New User"
+        open={isModalVisible}
+        onCancel={handleCancel}
+      >
+        <div style={{ maxWidth: 600, margin: '0 auto' }}>
+          <Form
+            onFinish={onFinish}
+            onFinishFailed={onFinishFailed}
+            layout="vertical"
+            colon={false}
+          >
+            <Row gutter={16}>
+              {/* Kolom pertama: Full Name dan Username */}
+              <Col span={12}>
+                <Form.Item
+                  label="Full Name"
+                  name="fullName"
+                  rules={[{ required: true, message: 'Please input your full name!' }]}
+                >
+                  <Input placeholder="Enter your full name" />
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item
+                  label="Username"
+                  name="username"
+                  rules={[{ required: true, message: 'Please input your username!' }]}
+                >
+                  <Input placeholder="Enter your username" />
+                </Form.Item>
+              </Col>
+            </Row>
+
+            <Row gutter={16}>
+              {/* Kolom kedua: Email dan Password */}
+              <Col span={12}>
+                <Form.Item
+                  label="Email"
+                  name="email"
+                  rules={[
+                    { required: true, message: 'Please input your email!' },
+                    { type: 'email', message: 'Please enter a valid email!' },
+                  ]}
+                >
+                  <Input placeholder="Enter your email" />
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item
+                  label="Password"
+                  name="password"
+                  rules={[{ required: true, message: 'Please input your password!' }]}
+                >
+                  <Input.Password placeholder="Enter your password" />
+                </Form.Item>
+              </Col>
+            </Row>
+
+            {/* Custom submit and cancel buttons */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <Button onClick={handleCancel} style={{ marginRight: '8px' }}>
+                Cancel
+              </Button>
+              <Button type="primary" htmlType="submit" loading={confirmLoading}>
+                Submit
+              </Button>
+            </div>
+          </Form>
+        </div>
+      </ReusableModal>
+    </>
+  );
+};
+
+export default App;
+
+axios.post('https://your-api-endpoint.com/users', values, {
+  headers: {
+    'Authorization': `Bearer ${yourToken}`,
+    'Content-Type': 'application/json'
+  }
+});

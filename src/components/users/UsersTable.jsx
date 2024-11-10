@@ -71,7 +71,7 @@ const UsersTable = () => {
     setConfirmLoading(true);
     setTimeout(() => {
       setConfirmLoading(false);
-      setIsModalVisible(false); // Close modal after form submission
+      setIsModalVisible(false);
       message.success("User added successfully!");
     }, 2000);
   };
