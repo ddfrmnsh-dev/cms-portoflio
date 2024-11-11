@@ -1,22 +1,38 @@
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import { Form, Input, Button, Typography, message } from "antd";
 import { LockOutlined, MailOutlined } from "@ant-design/icons";
 import axios from "axios";
+import { encrypt } from "../utils/cryptoUtils";
+import { AuthContext } from "../contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 const LoginPage = () => {
   const [confirmLoading, setConfirmLoading] = useState(false);
+  const { login } = useContext(AuthContext);
+  const navigate = useNavigate();
 
   const onFinish = async (values) => {
     console.log("Form values:", values);
     setConfirmLoading(true);
+    let encrptyPassword = encrypt(values.password);
 
+    let newValues = {
+      ...values,
+      password: encrptyPassword,
+    };
     try {
       const response = await axios.post(
-        "http:://127.0.0.1:3000/api/v1/admin/signAuth",
-        values
+        "http://localhost:3000/api/auth/adminSigninEnc",
+        newValues
       );
       console.log("API Response:", response.data);
 
+      if (response.status === 200) {
+        const { user, token } = response.data;
+
+        login(user, token);
+        navigate("/overview");
+      }
       setConfirmLoading(false);
       message.success("Login Successful!");
     } catch (error) {
@@ -30,6 +46,7 @@ const LoginPage = () => {
     console.log("Failed:", errorInfo);
     message.error(errorInfo?.errorFields[0]?.errors);
   };
+
   return (
     <div className="flex min-h-full flex-col justify-center px-6 py-12 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-sm">
