@@ -1,16 +1,8 @@
-import { useEffect, useState } from "react";
-import Cookies from "js-cookie";
+import { useContext, useEffect, useState } from "react";
+import { AuthContext } from "../contexts/AuthContext";
 export const useAuth = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-
-  useEffect(() => {
-    // const token = localStorage.getItem("token");
-    const token = Cookies.get("token");
-    console.log("status token", token);
-
-    setIsAuthenticated(!!token);
-    console.log("status auth", isAuthenticated);
-  }, []);
-
-  return isAuthenticated;
+  // const { isAuthenticated } = useContext(AuthContext);
+  // return isAuthenticated;
+  const { isAuthenticated, loading, login, logout } = useContext(AuthContext);
+  return { isAuthenticated, loading, login, logout };
 };

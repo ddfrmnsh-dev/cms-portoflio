@@ -1,15 +1,17 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { Form, Input, Button, Typography, message } from "antd";
 import { LockOutlined, MailOutlined } from "@ant-design/icons";
 import axios from "axios";
 import { encrypt } from "../utils/cryptoUtils";
 import { AuthContext } from "../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../hooks/useAuth";
 
 const LoginPage = () => {
   const [confirmLoading, setConfirmLoading] = useState(false);
   const { login } = useContext(AuthContext);
   const navigate = useNavigate();
+  const { isAuthenticated, loading } = useAuth();
 
   const onFinish = async (values) => {
     console.log("Form values:", values);
@@ -25,7 +27,7 @@ const LoginPage = () => {
         "http://localhost:3000/api/auth/adminSigninEnc",
         newValues
       );
-      console.log("API Response:", response.data);
+      console.log("API Response:", response);
 
       if (response.status === 200) {
         const { user, token } = response.data;
@@ -46,6 +48,13 @@ const LoginPage = () => {
     console.log("Failed:", errorInfo);
     message.error(errorInfo?.errorFields[0]?.errors);
   };
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      console.log("isauth", isAuthenticated);
+      navigate("/overview");
+    }
+  }, [isAuthenticated, navigate]);
 
   return (
     <div className="flex min-h-full flex-col justify-center px-6 py-12 lg:px-8">

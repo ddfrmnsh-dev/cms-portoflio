@@ -1,58 +1,45 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Search } from "lucide-react";
 import ReusableModal from "../common/ReusableModal";
 import { Button, Col, Form, Input, message, Row } from "antd";
-
-const userData = [
-  {
-    id: 1,
-    name: "John Doe",
-    email: "john@example.com",
-    role: "Customer",
-    status: "Active",
-  },
-  {
-    id: 2,
-    name: "Jane Smith",
-    email: "jane@example.com",
-    role: "Admin",
-    status: "Active",
-  },
-  {
-    id: 3,
-    name: "Bob Johnson",
-    email: "bob@example.com",
-    role: "Customer",
-    status: "Inactive",
-  },
-  {
-    id: 4,
-    name: "Alice Brown",
-    email: "alice@example.com",
-    role: "Customer",
-    status: "Active",
-  },
-  {
-    id: 5,
-    name: "Charlie Wilson",
-    email: "charlie@example.com",
-    role: "Moderator",
-    status: "Active",
-  },
-];
+import axios from "axios";
+import Cookies from "js-cookie";
 
 const UsersTable = () => {
+  const baseUrl = import.meta.env.VITE_BASE_URL;
+  const [userDatas, setUserDatas] = useState([]);
+  const [filteredUsers, setFilteredUsers] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [filteredUsers, setFilteredUsers] = useState(userData);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [confirmLoading, setConfirmLoading] = useState(false);
-  const [modalText, setModalText] = useState("Content of the modal");
+
+  const getUser = async () => {
+    try {
+      const response = await axios.get(`${baseUrl}/api/v1/users`, {
+        headers: {
+          Authorization: Cookies.get("token"),
+        },
+      });
+
+      setUserDatas(response.data.data);
+      message.success("success retrieve data");
+      // message.info(response.data.meta.message);
+      setFilteredUsers(response.data.data);
+    } catch (error) {
+      console.log(error);
+      message.error("Failed retrieve data");
+    }
+  };
+
+  useEffect(() => {
+    getUser();
+  }, []);
 
   const handleSearch = (e) => {
     const term = e.target.value.toLowerCase();
     setSearchTerm(term);
-    const filtered = userData.filter(
+    const filtered = userDatas.filter(
       (user) =>
         user.name.toLowerCase().includes(term) ||
         user.email.toLowerCase().includes(term)
@@ -163,19 +150,19 @@ const UsersTable = () => {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-800 text-blue-100">
-                    {user.role}
+                    {user.email}
                   </span>
                 </td>
 
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span
                     className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                      user.status === "Active"
+                      user.is_active === true
                         ? "bg-green-800 text-green-100"
                         : "bg-red-800 text-red-100"
                     }`}
                   >
-                    {user.status}
+                    {user.is_active === true ? "Active" : "Inactive"}
                   </span>
                 </td>
 
