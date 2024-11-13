@@ -11,6 +11,7 @@ import LoginPage from "./pages/LoginPage";
 import PrivateRoute from "./components/PrivateRoute";
 import { AuthProvider } from "./contexts/AuthContext";
 import NotFoundPage from "./pages/NotFoundPage";
+import SignOutPage from "./pages/SignOutPage";
 
 function App() {
   return (
@@ -34,6 +35,10 @@ function App() {
       <Route
         path="/settings"
         element={<PrivateRoute component={SettingsPage} />}
+      />
+      <Route
+        path="/signout"
+        element={<PrivateRoute component={SignOutPage} />}
       />
       <Route path="*" element={<NotFoundPage />} />
     </Routes>

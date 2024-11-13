@@ -23,12 +23,12 @@ const UsersTable = () => {
       });
 
       setUserDatas(response.data.data);
-      message.success("success retrieve data");
+      message.success("Data’s locked and loaded!");
       // message.info(response.data.meta.message);
       setFilteredUsers(response.data.data);
     } catch (error) {
       console.log(error);
-      message.error("Failed retrieve data");
+      message.error("Uh-oh! Failed to fetch the data.");
     }
   };
 

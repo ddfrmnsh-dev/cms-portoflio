@@ -10,7 +10,7 @@ import PageWrapper from "./PageWrapper";
 
 const OverviewPage = () => {
   return (
-    <PageWrapper>
+    <PageWrapper title={"Overview Page"}>
       <div className="flex-1 overflow-auto relative z-10">
         <Header title="Overview" />
 

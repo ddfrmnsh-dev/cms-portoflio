@@ -18,7 +18,7 @@ const userStats = {
 
 const UsersPage = () => {
   return (
-    <PageWrapper>
+    <PageWrapper title={"User Page"}>
       <div className="flex-1 overflow-auto relative z-10">
         <Header title="Users" />
 
