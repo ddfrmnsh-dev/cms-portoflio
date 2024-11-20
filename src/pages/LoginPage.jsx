@@ -9,6 +9,7 @@ import { useAuth } from "../hooks/useAuth";
 import { Helmet, HelmetProvider } from "react-helmet-async";
 
 const LoginPage = () => {
+  const baseUrl = import.meta.env.VITE_BASE_URL;
   const [confirmLoading, setConfirmLoading] = useState(false);
   const { login } = useContext(AuthContext);
   const navigate = useNavigate();
@@ -25,7 +26,7 @@ const LoginPage = () => {
     };
     try {
       const response = await axios.post(
-        "http://localhost:3000/api/auth/adminSigninEnc",
+        `${baseUrl}/api/auth/adminSigninEnc`,
         newValues
       );
       console.log("API Response:", response);

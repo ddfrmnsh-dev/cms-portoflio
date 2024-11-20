@@ -2,30 +2,54 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Search } from "lucide-react";
 import ReusableModal from "../common/ReusableModal";
-import { Button, Col, Form, Input, message, Row } from "antd";
+import {
+  Button,
+  Col,
+  Form,
+  Input,
+  message,
+  Row,
+  Pagination,
+  Modal,
+} from "antd";
 import axios from "axios";
 import Cookies from "js-cookie";
+import { encrypt } from "../../utils/cryptoUtils";
 
 const UsersTable = () => {
   const baseUrl = import.meta.env.VITE_BASE_URL;
+  const [form] = Form.useForm();
   const [userDatas, setUserDatas] = useState([]);
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [confirmLoading, setConfirmLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [limit, setLimit] = useState(5);
+  const [total, setTotal] = useState(0);
+  const [hasFetched, setHasFetched] = useState(false);
 
-  const getUser = async () => {
+  const getUser = async (page = 1, limit = 5) => {
     try {
       const response = await axios.get(`${baseUrl}/api/v1/users`, {
         headers: {
           Authorization: Cookies.get("token"),
         },
+        params: { page, limit },
       });
 
-      setUserDatas(response.data.data);
-      message.success("Data’s locked and loaded!");
+      setUserDatas(response.data.data.user);
+      setTotal(response.data.data.total);
+
+      console.log("TOTAL", total);
+      console.log("RES", response.data);
+      // message.success("Data’s locked and loaded!");
+      if (!hasFetched) {
+        message.success("Data’s locked and loaded!");
+        setHasFetched(true); // Update status hasFetched agar pesan tidak ditampilkan lagi
+      }
       // message.info(response.data.meta.message);
-      setFilteredUsers(response.data.data);
+      setFilteredUsers(response.data.data.user);
     } catch (error) {
       console.log(error);
       message.error("Uh-oh! Failed to fetch the data.");
@@ -33,8 +57,8 @@ const UsersTable = () => {
   };
 
   useEffect(() => {
-    getUser();
-  }, []);
+    getUser(currentPage, limit);
+  }, [currentPage, limit]);
 
   const handleSearch = (e) => {
     const term = e.target.value.toLowerCase();
@@ -48,19 +72,41 @@ const UsersTable = () => {
   };
 
   const showModal = () => {
+    form.resetFields();
     setIsModalVisible(true);
     console.log("true");
   };
 
   // Form submission handler
-  const onFinish = (values) => {
+  const onFinish = async (values) => {
     console.log("Form Submitted:", values);
     setConfirmLoading(true);
-    setTimeout(() => {
-      setConfirmLoading(false);
+
+    let encrptyPassword = encrypt(values.Password);
+
+    let newValues = {
+      ...values,
+      password: encrptyPassword,
+    };
+
+    try {
+      const response = await axios.post(`${baseUrl}/api/v1/user`, newValues, {
+        headers: {
+          Authorization: Cookies.get("token"),
+        },
+      });
+      console.log("API Response User:", response);
       setIsModalVisible(false);
-      message.success("User added successfully!");
-    }, 2000);
+
+      setConfirmLoading(false);
+      message.success("Yeay! You’re create user!");
+
+      await getUser(currentPage, limit);
+    } catch (error) {
+      console.error("Error submitting form:", error);
+      setConfirmLoading(false);
+      message.error("Failed create user. Please try again.");
+    }
   };
 
   const onFinishFailed = (errorInfo) => {
@@ -73,6 +119,43 @@ const UsersTable = () => {
     setIsModalVisible(false);
   };
 
+  const handlePageChange = (page, limit) => {
+    setCurrentPage(page); // Update halaman
+    setLimit(limit); // Update limit
+    getUser(page, limit); // Panggil API dengan page dan limit yang baru
+  };
+  const handleDelete = (userId) => {
+    Modal.confirm({
+      title: "Are you sure you want to delete this user?",
+      content: "This action cannot be undone.",
+      okText: "Yes, Delete",
+      cancelText: "Cancel",
+      onOk: async () => {
+        try {
+          const response = await axios.delete(
+            `${baseUrl}/api/v1/user/${userId}`,
+            {
+              headers: {
+                Authorization: Cookies.get("token"),
+              },
+            }
+          );
+
+          // Jika berhasil dihapus, tampilkan pesan sukses
+          message.success("User deleted successfully!");
+
+          // Refresh data pengguna setelah penghapusan
+          getUser(currentPage, limit);
+        } catch (error) {
+          // Tampilkan pesan error jika gagal
+          message.error("Failed to delete the user. Please try again.");
+        }
+      },
+      onCancel: () => {
+        console.log("Cancel delete");
+      },
+    });
+  };
   return (
     <motion.div
       className="bg-gray-800 bg-opacity-50 backdrop-blur-md shadow-lg rounded-xl p-6 border border-gray-700"
@@ -121,7 +204,6 @@ const UsersTable = () => {
               </th>
             </tr>
           </thead>
-
           <tbody className="divide-y divide-gray-700">
             {filteredUsers.map((user) => (
               <motion.tr
@@ -170,7 +252,10 @@ const UsersTable = () => {
                   <button className="text-indigo-400 hover:text-indigo-300 mr-2">
                     Edit
                   </button>
-                  <button className="text-red-400 hover:text-red-300">
+                  <button
+                    className="text-red-400 hover:text-red-300"
+                    onClick={() => handleDelete(user.id)}
+                  >
                     Delete
                   </button>
                 </td>
@@ -178,6 +263,12 @@ const UsersTable = () => {
             ))}
           </tbody>
         </table>
+        <Pagination
+          current={currentPage}
+          pageSize={limit}
+          total={total}
+          onChange={handlePageChange}
+        />
 
         <ReusableModal
           title="Add New User"
@@ -190,6 +281,7 @@ const UsersTable = () => {
         >
           <div style={{ maxWidth: 600, margin: "0 auto" }}>
             <Form
+              form={form}
               id="user-form" // Ensure this is the correct form ID
               onFinish={onFinish}
               onFinishFailed={onFinishFailed}
@@ -201,7 +293,7 @@ const UsersTable = () => {
                 <Col span={12}>
                   <Form.Item
                     label="Full Name"
-                    name="fullName"
+                    name="name"
                     rules={[
                       {
                         required: true,
