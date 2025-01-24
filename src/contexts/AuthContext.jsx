@@ -12,6 +12,13 @@ export const AuthProvider = ({ children }) => {
   const login = (userData, token) => {
     setIsAuthenticated(true);
     setUserInfo(userData);
+    // setUserInfo((prevState) => {
+    //   const updatedState = userData;
+    //   console.log("Updated userInfo:", updatedState);
+    //   return updatedState;
+    // });
+    console.log("userAuth", userInfo);
+    console.log("userData", userData);
     Cookies.set("token", token);
   };
 
@@ -40,6 +47,10 @@ export const AuthProvider = ({ children }) => {
       return true;
     }
   };
+
+  useEffect(() => {
+    console.log("userInfo updated:", userInfo);
+  }, [userInfo]);
 
   useEffect(() => {
     const token = Cookies.get("token");

@@ -32,7 +32,7 @@ const LoginPage = () => {
       console.log("API Response:", response);
 
       if (response.status === 200) {
-        const { user, token } = response.data;
+        const { user, token } = response.data.data;
 
         login(user, token);
         navigate("/overview");
@@ -60,15 +60,15 @@ const LoginPage = () => {
 
   return (
     <>
-      <HelmetProvider>
-        <Helmet>
-          <title>Login Page</title>
-          <meta
-            name="description"
-            content="This is Login Page you can attack my website"
-          />
-        </Helmet>
-      </HelmetProvider>
+      {/* <HelmetProvider> */}
+      <Helmet>
+        <title>Login Page</title>
+        <meta
+          name="description"
+          content="This is Login Page you can attack my website"
+        />
+      </Helmet>
+      {/* </HelmetProvider> */}
       <div className="flex min-h-full flex-col justify-center px-6 py-12 lg:px-8">
         <div className="sm:mx-auto sm:w-full sm:max-w-sm">
           <div className="flex justify-center">

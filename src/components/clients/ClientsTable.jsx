@@ -11,18 +11,19 @@ import {
   Row,
   Pagination,
   Modal,
+  Upload,
 } from "antd";
 import axios from "axios";
 import Cookies from "js-cookie";
 import { encrypt } from "../../utils/cryptoUtils";
 import PaginationReusable from "../common/PanginationReusable";
-import { SyncOutlined } from "@ant-design/icons";
+import { SyncOutlined, UploadOutlined } from "@ant-design/icons";
 
-const UsersTable = () => {
+const ClientsTable = () => {
   const baseUrl = import.meta.env.VITE_BASE_URL;
   const [form] = Form.useForm();
-  const [userDatas, setUserDatas] = useState([]);
-  const [filteredUsers, setFilteredUsers] = useState([]);
+  const [clientDatas, setClientDatas] = useState([]);
+  const [filteredClients, setFilteredClients] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [confirmLoading, setConfirmLoading] = useState(false);
@@ -30,26 +31,25 @@ const UsersTable = () => {
   const [limit, setLimit] = useState(5);
   const [total, setTotal] = useState(0);
   const [hasFetched, setHasFetched] = useState(false);
+  const [file, setFile] = useState(null);
 
   const getUser = async (page = 1, limit = 5) => {
     try {
-      const response = await axios.get(`${baseUrl}/api/v1/users`, {
+      const response = await axios.get(`${baseUrl}/api/v1/client`, {
         headers: {
           Authorization: Cookies.get("token"),
         },
         params: { page, limit },
       });
 
-      setUserDatas(response.data.data.user);
+      setClientDatas(response.data.data.clients);
       setTotal(response.data.data.total);
 
-      // message.success("Data’s locked and loaded!");
       if (!hasFetched) {
         message.success("Data’s locked and loaded!");
         setHasFetched(true); // Update status hasFetched agar pesan tidak ditampilkan lagi
       }
-      // message.info(response.data.meta.message);
-      setFilteredUsers(response.data.data.user);
+      setFilteredClients(response.data.data.clients);
     } catch (error) {
       console.log(error);
       message.error("Uh-oh! Failed to fetch the data.");
@@ -63,12 +63,10 @@ const UsersTable = () => {
   const handleSearch = (e) => {
     const term = e.target.value.toLowerCase();
     setSearchTerm(term);
-    const filtered = userDatas.filter(
-      (user) =>
-        user.name.toLowerCase().includes(term) ||
-        user.email.toLowerCase().includes(term)
+    const filtered = clientDatas.filter((user) =>
+      user.name.toLowerCase().includes(term)
     );
-    setFilteredUsers(filtered);
+    setFilteredClients(filtered);
   };
 
   const showModal = () => {
@@ -77,29 +75,26 @@ const UsersTable = () => {
     console.log("true");
   };
 
-  // Form submission handler
   const onFinish = async (values) => {
     console.log("Form Submitted:", values);
     setConfirmLoading(true);
 
-    let encrptyPassword = encrypt(values.Password);
-
-    let newValues = {
-      ...values,
-      password: encrptyPassword,
-    };
+    const formData = new FormData();
+    formData.append("name", values.name);
+    formData.append("img", file);
 
     try {
-      const response = await axios.post(`${baseUrl}/api/v1/user`, newValues, {
+      const response = await axios.post(`${baseUrl}/api/v1/client`, formData, {
         headers: {
           Authorization: Cookies.get("token"),
+          "Content-Type": "multipart/form-data",
         },
       });
       console.log("API Response User:", response);
       setIsModalVisible(false);
 
       setConfirmLoading(false);
-      message.success("Yeay! You’re create user!");
+      message.success("Yeay! You’re create client!");
 
       await getUser(currentPage, limit);
     } catch (error) {
@@ -114,27 +109,31 @@ const UsersTable = () => {
     message.error(errorInfo?.errorFields[0]?.errors);
   };
 
+  const handleFileChange = ({ file }) => {
+    setFile(file);
+  };
+
   const handleCancel = () => {
     console.log("Cancel clicked");
     setIsModalVisible(false);
   };
 
   const handlePageChange = (page, limit) => {
-    setCurrentPage(page); // Update halaman
-    setLimit(limit); // Update limit
-    getUser(page, limit); // Panggil API dengan page dan limit yang baru
+    setCurrentPage(page);
+    setLimit(limit);
+    getUser(page, limit);
   };
 
-  const handleDelete = (userId) => {
+  const handleDelete = (clientId) => {
     Modal.confirm({
-      title: "Are you sure you want to delete this user?",
+      title: "Are you sure you want to delete this client?",
       content: "This action cannot be undone.",
       okText: "Yes, Delete",
       cancelText: "Cancel",
       onOk: async () => {
         try {
           const response = await axios.delete(
-            `${baseUrl}/api/v1/user/${userId}`,
+            `${baseUrl}/api/v1/client/${clientId}`,
             {
               headers: {
                 Authorization: Cookies.get("token"),
@@ -157,6 +156,7 @@ const UsersTable = () => {
       },
     });
   };
+
   return (
     <motion.div
       className="bg-gray-800 bg-opacity-50 backdrop-blur-md shadow-lg rounded-xl p-6 border border-gray-700"
@@ -165,7 +165,7 @@ const UsersTable = () => {
       transition={{ delay: 0.2 }}
     >
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl font-semibold text-gray-100">Users</h2>
+        <h2 className="text-xl font-semibold text-gray-100">Clients</h2>
         <div className="relative">
           <input
             type="text"
@@ -183,7 +183,7 @@ const UsersTable = () => {
           className="bg-indigo-600 hover:bg-indigo-700 text-white font-normal py-2 px-3 mb-2 rounded transition duration-200 w-full sm:w-auto justify-self-end"
           onClick={showModal}
         >
-          Add User
+          Add Client
         </button>
         <table className="min-w-full divide-y divide-gray-700">
           <thead>
@@ -192,13 +192,10 @@ const UsersTable = () => {
                 Name
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                Email
+                Logo
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                Role
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                Status
+                Total Project
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                 Actions
@@ -206,9 +203,9 @@ const UsersTable = () => {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-700">
-            {filteredUsers.map((user) => (
+            {filteredClients.map((client) => (
               <motion.tr
-                key={user.id}
+                key={client.id}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.3 }}
@@ -217,35 +214,29 @@ const UsersTable = () => {
                   <div className="flex items-center">
                     <div className="flex-shrink-0 h-10 w-10">
                       <div className="h-10 w-10 rounded-full bg-gradient-to-r from-purple-400 to-blue-500 flex items-center justify-center text-white font-semibold">
-                        {user.name.charAt(0)}
+                        {client.name.charAt(0)}
                       </div>
                     </div>
                     <div className="ml-4">
                       <div className="text-sm font-medium text-gray-100">
-                        {user.name}
+                        {client.name}
                       </div>
                     </div>
                   </div>
                 </td>
 
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-300">{user.email}</div>
+                  <div className="text-sm text-gray-300">
+                    <img
+                      src={`http://localhost:3000/${client?.pathLogo}`}
+                      alt=""
+                      className="h-10 w-10 rounded-sm"
+                    />
+                  </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-800 text-blue-100">
-                    {user.email}
-                  </span>
-                </td>
-
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span
-                    className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                      user.isActive === true
-                        ? "bg-green-800 text-green-100"
-                        : "bg-red-800 text-red-100"
-                    }`}
-                  >
-                    {user.isActive === true ? "Active" : "Inactive"}
+                    {client?._count?.project}
                   </span>
                 </td>
 
@@ -255,7 +246,7 @@ const UsersTable = () => {
                   </button>
                   <button
                     className="text-red-400 hover:text-red-300"
-                    onClick={() => handleDelete(user.id)}
+                    onClick={() => handleDelete(client.id)}
                   >
                     Delete
                   </button>
@@ -293,60 +284,33 @@ const UsersTable = () => {
                 {/* Kolom pertama: Full Name dan Username */}
                 <Col span={12}>
                   <Form.Item
-                    label="Full Name"
+                    label="Client Name"
                     name="name"
                     rules={[
                       {
                         required: true,
-                        message: "Please input your full name!",
+                        message: "Please input client name!",
                       },
                     ]}
                   >
-                    <Input placeholder="Enter your full name" />
+                    <Input placeholder="Enter client name" />
                   </Form.Item>
                 </Col>
                 <Col span={12}>
                   <Form.Item
-                    label="Username"
-                    name="username"
+                    label="Upload Logo"
                     rules={[
-                      {
-                        required: true,
-                        message: "Please input your username!",
-                      },
+                      { required: true, message: "Please upload an image!" },
                     ]}
                   >
-                    <Input placeholder="Enter your username" />
-                  </Form.Item>
-                </Col>
-              </Row>
-
-              <Row gutter={16}>
-                {/* Kolom kedua: Email dan Password */}
-                <Col span={12}>
-                  <Form.Item
-                    label="Email"
-                    name="email"
-                    rules={[
-                      { required: true, message: "Please input your email!" },
-                      { type: "email", message: "Please enter a valid email!" },
-                    ]}
-                  >
-                    <Input placeholder="Enter your email" />
-                  </Form.Item>
-                </Col>
-                <Col span={12}>
-                  <Form.Item
-                    label="Password"
-                    name="password"
-                    rules={[
-                      {
-                        required: true,
-                        message: "Please input your password!",
-                      },
-                    ]}
-                  >
-                    <Input.Password placeholder="Enter your password" />
+                    <Upload
+                      beforeUpload={() => false} // Disable default upload behavior
+                      onChange={handleFileChange}
+                      //   fileList={fileList}
+                      maxCount={1}
+                    >
+                      <Button icon={<UploadOutlined />}>Select File</Button>
+                    </Upload>
                   </Form.Item>
                 </Col>
               </Row>
@@ -375,4 +339,4 @@ const UsersTable = () => {
     </motion.div>
   );
 };
-export default UsersTable;
+export default ClientsTable;

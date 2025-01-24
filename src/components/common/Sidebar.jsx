@@ -7,6 +7,7 @@ import {
   ShoppingCart,
   TrendingUp,
   Users,
+  Layers,
   LogOut,
 } from "lucide-react";
 import { useState } from "react";
@@ -20,11 +21,12 @@ const SIDEBAR_ITEMS = [
     color: "#6366f1",
     href: "/overview",
   },
+  { name: "Clients", icon: Layers, color: "#3B82F6", href: "/clients" },
   { name: "Products", icon: ShoppingBag, color: "#8B5CF6", href: "/products" },
   { name: "Users", icon: Users, color: "#EC4899", href: "/users" },
   { name: "Sales", icon: DollarSign, color: "#10B981", href: "/sales" },
   { name: "Orders", icon: ShoppingCart, color: "#F59E0B", href: "/orders" },
-  { name: "Analytics", icon: TrendingUp, color: "#3B82F6", href: "/analytics" },
+  // { name: "Analytics", icon: TrendingUp, color: "#3B82F6", href: "/analytics" },
   { name: "Settings", icon: Settings, color: "#6EE7B7", href: "/settings" },
   { name: "Logout", icon: LogOut, color: "#FF0000", href: "/signout" },
 ];

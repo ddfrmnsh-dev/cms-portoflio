@@ -12,6 +12,7 @@ import PrivateRoute from "./components/PrivateRoute";
 import { AuthProvider } from "./contexts/AuthContext";
 import NotFoundPage from "./pages/NotFoundPage";
 import SignOutPage from "./pages/SignOutPage";
+import ClientsPage from "./pages/ClientPage";
 
 function App() {
   return (
@@ -28,9 +29,13 @@ function App() {
       <Route path="/users" element={<PrivateRoute component={UsersPage} />} />
       <Route path="/sales" element={<PrivateRoute component={SalesPage} />} />
       <Route path="/orders" element={<PrivateRoute component={OrdersPage} />} />
-      <Route
+      {/* <Route
         path="/analytics"
         element={<PrivateRoute component={AnalyticsPage} />}
+      /> */}
+      <Route
+        path="/clients"
+        element={<PrivateRoute component={ClientsPage} />}
       />
       <Route
         path="/settings"
