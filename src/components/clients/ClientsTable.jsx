@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Search } from "lucide-react";
 import ModalReusable from "../common/ModalReusable";
@@ -13,117 +13,92 @@ import {
   Modal,
   Upload,
 } from "antd";
-import axios from "axios";
-import Cookies from "js-cookie";
-import { encrypt } from "../../utils/cryptoUtils";
-import PaginationReusable from "../common/PanginationReusable";
 import { SyncOutlined, UploadOutlined } from "@ant-design/icons";
+import { ClientContext } from "../../contexts/ClientContext";
+import UpdateClientModal from "./UpdateClientModal";
+import PaginationReusable from "../common/PanginationReusable";
 
 const ClientsTable = () => {
   const baseUrl = import.meta.env.VITE_BASE_URL;
   const [form] = Form.useForm();
-  const [clientDatas, setClientDatas] = useState([]);
-  const [filteredClients, setFilteredClients] = useState([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [isModalVisible, setIsModalVisible] = useState(false);
-  const [confirmLoading, setConfirmLoading] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [limit, setLimit] = useState(5);
-  const [total, setTotal] = useState(0);
-  const [hasFetched, setHasFetched] = useState(false);
   const [file, setFile] = useState(null);
+  const [selectedClientId, setSelectedClientId] = useState(null);
+  const [selectedClientData, setSelectedClientData] = useState(null);
+  const [confirmLoading, setConfirmLoading] = useState(false);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isModalVisibleUpdate, setIsModalVisibleUpdate] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filteredClients, setFilteredClients] = useState([]);
 
-  const getUser = async (page = 1, limit = 5) => {
-    try {
-      const response = await axios.get(`${baseUrl}/api/v1/client`, {
-        headers: {
-          Authorization: Cookies.get("token"),
-        },
-        params: { page, limit },
-      });
+  const {
+    clients,
+    totalClient,
+    setTotalClient,
+    fetchClients,
+    currentPage,
+    setCurrentPage,
+    limit,
+    setLimit,
+    findClientById,
+    createClient,
+    selectedClient,
+  } = useContext(ClientContext);
 
-      setClientDatas(response.data.data.clients);
-      setTotal(response.data.data.total);
-
-      if (!hasFetched) {
-        message.success("Data’s locked and loaded!");
-        setHasFetched(true); // Update status hasFetched agar pesan tidak ditampilkan lagi
-      }
-      setFilteredClients(response.data.data.clients);
-    } catch (error) {
-      console.log(error);
-      message.error("Uh-oh! Failed to fetch the data.");
-    }
-  };
-
-  useEffect(() => {
-    getUser(currentPage, limit);
-  }, [currentPage, limit]);
-
+  // Menyaring client berdasarkan pencarian
   const handleSearch = (e) => {
     const term = e.target.value.toLowerCase();
     setSearchTerm(term);
-    const filtered = clientDatas.filter((user) =>
-      user.name.toLowerCase().includes(term)
+
+    const filtered = clients.filter((client) =>
+      client.name.toLowerCase().includes(term)
     );
+
     setFilteredClients(filtered);
   };
 
+  // Menampilkan modal untuk menambah client
   const showModal = () => {
     form.resetFields();
     setIsModalVisible(true);
-    console.log("true");
   };
 
-  const onFinish = async (values) => {
-    console.log("Form Submitted:", values);
-    setConfirmLoading(true);
+  const showModalUpdate = async (clientId) => {
+    form.resetFields();
+    setIsModalVisibleUpdate(true);
+    setSelectedClientId(clientId);
 
+    // Ambil data client berdasarkan ID untuk diupdate
+    await findClientById(clientId);
+  };
+
+  // Fungsi untuk menambahkan client
+  const onFinish = async (values) => {
+    setConfirmLoading(true);
     const formData = new FormData();
     formData.append("name", values.name);
     formData.append("img", file);
 
     try {
-      const response = await axios.post(`${baseUrl}/api/v1/client`, formData, {
-        headers: {
-          Authorization: Cookies.get("token"),
-          "Content-Type": "multipart/form-data",
-        },
-      });
-      console.log("API Response User:", response);
+      await createClient(formData);
       setIsModalVisible(false);
-
+      setFile(null);
+      form.resetFields();
       setConfirmLoading(false);
-      message.success("Yeay! You’re create client!");
-
-      await getUser(currentPage, limit);
+      message.success("Client created successfully!");
+      fetchClients(currentPage, limit);
     } catch (error) {
-      console.error("Error submitting form:", error);
       setConfirmLoading(false);
-      message.error("Failed create user. Please try again.");
+      message.error("Failed to create client. Please try again.");
     }
   };
 
-  const onFinishFailed = (errorInfo) => {
-    console.log("Failed:", errorInfo);
-    message.error(errorInfo?.errorFields[0]?.errors);
-  };
-
-  const handleFileChange = ({ file }) => {
-    setFile(file);
-  };
-
-  const handleCancel = () => {
-    console.log("Cancel clicked");
-    setIsModalVisible(false);
-  };
-
+  // Handle pagination
   const handlePageChange = (page, limit) => {
     setCurrentPage(page);
     setLimit(limit);
-    getUser(page, limit);
   };
 
+  // Menghapus client
   const handleDelete = (clientId) => {
     Modal.confirm({
       title: "Are you sure you want to delete this client?",
@@ -132,30 +107,21 @@ const ClientsTable = () => {
       cancelText: "Cancel",
       onOk: async () => {
         try {
-          const response = await axios.delete(
-            `${baseUrl}/api/v1/client/${clientId}`,
-            {
-              headers: {
-                Authorization: Cookies.get("token"),
-              },
-            }
-          );
-
-          // Jika berhasil dihapus, tampilkan pesan sukses
-          message.success("User deleted successfully!");
-
-          // Refresh data pengguna setelah penghapusan
-          getUser(currentPage, limit);
+          await deleteClient(clientId);
+          message.success("Client deleted successfully!");
+          fetchClients(currentPage, limit);
         } catch (error) {
-          // Tampilkan pesan error jika gagal
-          message.error("Failed to delete the user. Please try again.");
+          message.error("Failed to delete client.");
         }
-      },
-      onCancel: () => {
-        console.log("Cancel delete");
       },
     });
   };
+
+  useEffect(() => {
+    if (clients && Array.isArray(clients)) {
+      setFilteredClients(clients);
+    }
+  }, [clients]);
 
   return (
     <motion.div
@@ -169,7 +135,7 @@ const ClientsTable = () => {
         <div className="relative">
           <input
             type="text"
-            placeholder="Search users..."
+            placeholder="Search clients..."
             className="bg-gray-700 text-white placeholder-gray-400 rounded-lg pl-10 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
             value={searchTerm}
             onChange={handleSearch}
@@ -178,34 +144,37 @@ const ClientsTable = () => {
         </div>
       </div>
 
-      <div className="grid grid-rows-[auto,1fr,auto] overflow-x-auto h-full">
+      <div className="flex justify-end mb-3">
         <button
-          className="bg-indigo-600 hover:bg-indigo-700 text-white font-normal py-2 px-3 mb-2 rounded transition duration-200 w-full sm:w-auto justify-self-end"
+          className="bg-indigo-600 hover:bg-indigo-700 text-white font-normal py-2 px-3 mb-2 rounded transition duration-200 sm:w-auto"
           onClick={showModal}
         >
           Add Client
         </button>
-        <table className="min-w-full divide-y divide-gray-700">
-          <thead>
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                Name
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                Logo
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                Total Project
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-700">
-            {filteredClients.map((client) => (
+      </div>
+
+      <table className="min-w-full divide-y divide-gray-700">
+        <thead>
+          <tr>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+              Name
+            </th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+              Logo
+            </th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+              Total Projects
+            </th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+              Actions
+            </th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-gray-700">
+          {filteredClients && filteredClients.length > 0 ? (
+            filteredClients.map((client) => (
               <motion.tr
-                key={client.id}
+                key={client?.id} // Menambahkan optional chaining untuk menghindari error jika client undefined
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.3 }}
@@ -214,129 +183,136 @@ const ClientsTable = () => {
                   <div className="flex items-center">
                     <div className="flex-shrink-0 h-10 w-10">
                       <div className="h-10 w-10 rounded-full bg-gradient-to-r from-purple-400 to-blue-500 flex items-center justify-center text-white font-semibold">
-                        {client.name.charAt(0)}
+                        {client?.name?.charAt(0)}{" "}
+                        {/* Pastikan client dan name valid */}
                       </div>
                     </div>
                     <div className="ml-4">
                       <div className="text-sm font-medium text-gray-100">
-                        {client.name}
+                        {client?.name || "No Name"}{" "}
+                        {/* Tampilkan fallback jika name tidak ada */}
                       </div>
                     </div>
                   </div>
                 </td>
-
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-300">
-                    <img
-                      src={`http://localhost:3000/${client?.pathLogo}`}
-                      alt=""
-                      className="h-10 w-10 rounded-sm"
-                    />
-                  </div>
+                  <img
+                    src={`http://localhost:3000/${client?.pathLogo}`}
+                    alt="Logo Client"
+                    className="h-10 w-10 rounded-sm"
+                    onError={(e) =>
+                      (e.target.src = "http://localhost:3000/broken-image.png")
+                    }
+                  />
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-800 text-blue-100">
-                    {client?._count?.project}
+                    {client?._count?.project || 0}{" "}
+                    {/* Menampilkan 0 jika tidak ada project */}
                   </span>
                 </td>
-
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-                  <button className="text-indigo-400 hover:text-indigo-300 mr-2">
+                  <button
+                    className="text-indigo-400 hover:text-indigo-300 mr-2"
+                    onClick={() => showModalUpdate(client?.id)}
+                  >
                     Edit
                   </button>
                   <button
                     className="text-red-400 hover:text-red-300"
-                    onClick={() => handleDelete(client.id)}
+                    onClick={() => handleDelete(client?.id)}
                   >
                     Delete
                   </button>
                 </td>
               </motion.tr>
-            ))}
-          </tbody>
-        </table>
-        <PaginationReusable
-          currentPage={currentPage}
-          pageSize={limit}
-          totalPages={total}
-          onPageChange={handlePageChange}
-        />
+            ))
+          ) : (
+            <tr>
+              <td colSpan="4" className="text-center text-gray-400 py-4">
+                No clients found.
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </table>
 
-        <ModalReusable
-          title="Add New User"
-          open={isModalVisible}
-          //   onOk={handleOk}
-          onCancel={handleCancel}
-          okText="Confirm"
-          cancelText="Dismiss"
-          confirmLoading={confirmLoading}
-        >
-          <div style={{ maxWidth: 600, margin: "0 auto" }}>
-            <Form
-              form={form}
-              id="user-form" // Ensure this is the correct form ID
-              onFinish={onFinish}
-              onFinishFailed={onFinishFailed}
-              layout="vertical"
-              colon={false}
-            >
-              <Row gutter={16}>
-                {/* Kolom pertama: Full Name dan Username */}
-                <Col span={12}>
-                  <Form.Item
-                    label="Client Name"
-                    name="name"
-                    rules={[
-                      {
-                        required: true,
-                        message: "Please input client name!",
-                      },
-                    ]}
-                  >
-                    <Input placeholder="Enter client name" />
-                  </Form.Item>
-                </Col>
-                <Col span={12}>
-                  <Form.Item
-                    label="Upload Logo"
-                    rules={[
-                      { required: true, message: "Please upload an image!" },
-                    ]}
-                  >
-                    <Upload
-                      beforeUpload={() => false} // Disable default upload behavior
-                      onChange={handleFileChange}
-                      //   fileList={fileList}
-                      maxCount={1}
-                    >
-                      <Button icon={<UploadOutlined />}>Select File</Button>
-                    </Upload>
-                  </Form.Item>
-                </Col>
-              </Row>
+      <PaginationReusable
+        currentPage={currentPage}
+        pageSize={limit}
+        totalPages={totalClient}
+        onPageChange={handlePageChange}
+      />
 
-              <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                <Button onClick={handleCancel} style={{ marginRight: "8px" }}>
-                  Cancel
-                </Button>
-                <Button
-                  htmlType="submit"
-                  loading={confirmLoading}
-                  icon={confirmLoading ? <SyncOutlined spin /> : null}
-                  style={{
-                    backgroundColor: "#4f46e5",
-                    borderColor: "#4f46e5",
-                    color: "#ffffff",
-                  }}
+      <UpdateClientModal
+        confirmLoad={confirmLoading}
+        idClient={selectedClientId?.id}
+        isOpen={isModalVisibleUpdate}
+        onCancel={() => setIsModalVisibleUpdate(false)}
+        clientData={selectedClient}
+        form={form}
+      />
+
+      <ModalReusable
+        title="Add New Client"
+        open={isModalVisible}
+        onCancel={() => setIsModalVisible(false)}
+        okText="Confirm"
+        cancelText="Dismiss"
+        confirmLoading={confirmLoading}
+      >
+        <Form form={form} onFinish={onFinish} layout="vertical" colon={false}>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                label="Client Name"
+                name="name"
+                rules={[
+                  { required: true, message: "Please input client name!" },
+                ]}
+              >
+                <Input placeholder="Enter client name" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                label="Upload Logo"
+                rules={[{ required: true, message: "Please upload a logo!" }]}
+              >
+                <Upload
+                  beforeUpload={() => false}
+                  onChange={({ file }) => setFile(file)}
+                  maxCount={1}
                 >
-                  Submit
-                </Button>
-              </div>
-            </Form>
+                  <Button icon={<UploadOutlined />}>Select File</Button>
+                </Upload>
+              </Form.Item>
+            </Col>
+          </Row>
+          <div style={{ display: "flex", justifyContent: "flex-end" }}>
+            <Button
+              onClick={() => setIsModalVisible(false)}
+              style={{ marginRight: "8px" }}
+            >
+              Cancel
+            </Button>
+            <Button
+              htmlType="submit"
+              loading={confirmLoading}
+              icon={confirmLoading ? <SyncOutlined spin /> : null}
+              style={{
+                backgroundColor: "#4f46e5",
+                borderColor: "#4f46e5",
+                color: "#ffffff",
+              }}
+            >
+              Submit
+            </Button>
           </div>
-        </ModalReusable>
-      </div>
+        </Form>
+      </ModalReusable>
     </motion.div>
   );
 };
+
 export default ClientsTable;
