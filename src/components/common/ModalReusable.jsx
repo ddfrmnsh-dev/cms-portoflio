@@ -10,6 +10,7 @@ const ModalReusable = ({
   cancelText = "Cancel",
   children,
   confirmLoading,
+  sizeModal,
 }) => {
   // const { darkAlgorithm } = theme;
   return (
@@ -40,6 +41,7 @@ const ModalReusable = ({
         onCancel={onCancel}
         confirmLoading={confirmLoading}
         footer={null}
+        width={sizeModal ? sizeModal : 600}
         // style={{ backgroundColor: "#f0f2f5" }}
         // bodyProps={{ backgroundColor: "#fff", padding: 20 }}
       >

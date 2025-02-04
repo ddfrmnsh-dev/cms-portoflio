@@ -9,6 +9,7 @@ const PaginationReusable = ({
   // const handlePageChange = (page) => {
   //   onPageChange(page);
   // };
+
   return (
     <ConfigProvider
       theme={{
