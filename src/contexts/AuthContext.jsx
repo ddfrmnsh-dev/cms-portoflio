@@ -12,13 +12,6 @@ export const AuthProvider = ({ children }) => {
   const login = (userData, token) => {
     setIsAuthenticated(true);
     setUserInfo(userData);
-    // setUserInfo((prevState) => {
-    //   const updatedState = userData;
-    //   console.log("Updated userInfo:", updatedState);
-    //   return updatedState;
-    // });
-    console.log("userAuth", userInfo);
-    console.log("userData", userData);
     Cookies.set("token", token);
   };
 
@@ -63,7 +56,7 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   useEffect(() => {
-    console.log(isAuthenticated);
+    console.log("checkIsAuthenticated:", isAuthenticated);
   }, [isAuthenticated]);
 
   return (

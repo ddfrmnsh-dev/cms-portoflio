@@ -4,7 +4,7 @@ import { useAuth } from "../hooks/useAuth";
 
 const PrivateRoute = ({ component: Component, ...rest }) => {
   const { isAuthenticated, loading } = useAuth();
-  console.log("isAuthenticated", isAuthenticated);
+  // console.log("isAuthenticated", isAuthenticated);
 
   if (loading) {
     return <div>Loading...</div>;
