@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { Form, Input, Button, Upload, message, Modal, Row, Col } from "antd";
 import { UploadOutlined, SyncOutlined } from "@ant-design/icons";
 import ModalReusable from "../common/ModalReusable";
+import { ClientContext } from "../../contexts/ClientContext";
 
 const UpdateClientModal = ({
   confirmLoad,
@@ -15,6 +16,8 @@ const UpdateClientModal = ({
   const [file, setFile] = useState(null); // state untuk logo yang baru di-upload
   const [loading, setLoading] = useState(false); // state untuk loading button
 
+  const { updateClient, fetchClients, currentPage, limit } =
+    useContext(ClientContext);
   // Set field values saat clientData diupdate
   useEffect(() => {
     if (clientData) {
@@ -28,9 +31,10 @@ const UpdateClientModal = ({
 
   // Handle file upload
   const handleFileChange = ({ file }) => {
-    if (file.status === "done") {
-      setFile(file.originFileObj);
-    }
+    // if (file.status === "done") {
+    //   setFile(file.originFileObj);
+    // }
+    setFile(file);
   };
 
   // Form submission for updating the client
@@ -40,13 +44,14 @@ const UpdateClientModal = ({
     formData.append("name", values.name);
 
     // If there's a file uploaded, append it to FormData
-    if (file) {
+    if (file !== null) {
       formData.append("img", file);
     }
 
     try {
-      await onUpdateClient(idClient, formData); // Call the function to update client
+      await updateClient(idClient, formData); // Call the function to update client
       message.success("Client updated successfully!");
+      fetchClients(currentPage, limit); // Refresh the client list
       onCancel(); // Close the modal after successful update
     } catch (error) {
       message.error("Failed to update client. Please try again.");

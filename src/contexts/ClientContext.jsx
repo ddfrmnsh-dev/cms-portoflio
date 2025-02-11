@@ -88,10 +88,10 @@ export const ClientProvider = ({ children }) => {
   };
 
   // Update User
-  const updateUser = async (id, updatedClient) => {
+  const updateClient = async (id, updatedClient) => {
     try {
       await clientApi.updateClient(id, updatedClient);
-      setUsers(
+      setClients(
         clients.map((client) =>
           client.id === id ? { ...client, ...updatedClient } : client
         )
@@ -125,6 +125,7 @@ export const ClientProvider = ({ children }) => {
         totalClient,
         createClient,
         deleteClient,
+        updateClient,
         fetchClients,
         findClientById,
         selectedClient,

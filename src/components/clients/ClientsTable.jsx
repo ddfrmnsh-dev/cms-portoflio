@@ -41,6 +41,7 @@ const ClientsTable = () => {
     setLimit,
     findClientById,
     createClient,
+    deleteClient,
     selectedClient,
   } = useContext(ClientContext);
 
@@ -109,6 +110,18 @@ const ClientsTable = () => {
         try {
           await deleteClient(clientId);
           message.success("Client deleted successfully!");
+
+          const newTotals = totalClient - 1;
+          setTotalClient(newTotals);
+
+          const maxPage = Math.ceil(newTotals / limit);
+
+          if (currentPage > maxPage) {
+            setCurrentPage(maxPage);
+          } else if (newTotals < limit && currentPage > 1) {
+            setCurrentPage(1);
+          }
+
           fetchClients(currentPage, limit);
         } catch (error) {
           message.error("Failed to delete client.");
@@ -246,7 +259,7 @@ const ClientsTable = () => {
 
       <UpdateClientModal
         confirmLoad={confirmLoading}
-        idClient={selectedClientId?.id}
+        idClient={selectedClientId}
         isOpen={isModalVisibleUpdate}
         onCancel={() => setIsModalVisibleUpdate(false)}
         clientData={selectedClient}
