@@ -16,7 +16,6 @@ const LoginPage = () => {
   const { isAuthenticated, loading } = useAuth();
 
   const onFinish = async (values) => {
-    console.log("Form values:", values);
     setConfirmLoading(true);
     let encrptyPassword = encrypt(values.password);
 
