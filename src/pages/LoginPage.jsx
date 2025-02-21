@@ -180,3 +180,139 @@ const LoginPage = () => {
 };
 
 export default LoginPage;
+
+// import React, { useContext, useEffect, useState } from "react";
+// import { Form, Input, Button, Typography, message } from "antd";
+// import { LockOutlined, MailOutlined } from "@ant-design/icons";
+// import axios from "axios";
+// import { AuthContext } from "../contexts/AuthContext";
+// import { useNavigate } from "react-router-dom";
+// import { useAuth } from "../hooks/useAuth";
+// import { Helmet } from "react-helmet-async";
+// import socket, { connectUser } from "../utils/socket"; // 🔥 Import socket
+// import { encrypt } from "../utils/cryptoUtils";
+
+// const LoginPage = () => {
+//   const baseUrl = import.meta.env.VITE_BASE_URL;
+//   const [confirmLoading, setConfirmLoading] = useState(false);
+//   const { login } = useContext(AuthContext);
+//   const navigate = useNavigate();
+//   const { isAuthenticated } = useAuth();
+//   const [notifications, setNotifications] = useState([]);
+
+//   useEffect(() => {
+//     if (isAuthenticated) {
+//       navigate("/overview");
+//     }
+//   }, [isAuthenticated, navigate]);
+
+//   useEffect(() => {
+//     // 📌 Menerima notifikasi real-time dari backend
+//     socket.on("notification", (notif) => {
+//       console.log("received", notif);
+//       console.log("🔔 New Notification from WebSocket:", notif);
+//       setNotifications((prev) => [...prev, notif]);
+//       message.info(`🔔 Notifikasi: ${notif}`);
+//     });
+
+//     // return () => {
+//     //   socket.off("notification");
+//     // };
+//   }, []);
+
+//   const onFinish = async (values) => {
+//     setConfirmLoading(true);
+//     let encrptyPassword = encrypt(values.password);
+
+//     let newValues = {
+//       ...values,
+//       password: encrptyPassword,
+//     };
+//     try {
+//       const response = await axios.post(
+//         `${baseUrl}/api/auth/adminSigninEnc`,
+//         newValues
+//       );
+
+//       if (response.status === 200) {
+//         const { user, token } = response.data.data;
+//         login(user, token);
+//         connectUser(user.id); // 🔥 Hubungkan WebSocket dengan userId
+//         navigate("/overview");
+//         message.success("Boom! You’re logged in!");
+//       }
+//     } catch (error) {
+//       console.error("Login Error:", error);
+//       message.error("Failed login. Please try again.");
+//     } finally {
+//       setConfirmLoading(false);
+//     }
+//   };
+
+//   return (
+//     <>
+//       <Helmet>
+//         <title>Login Page</title>
+//       </Helmet>
+//       <div className="flex min-h-full flex-col justify-center px-6 py-12 lg:px-8">
+//         <div className="sm:mx-auto sm:w-full sm:max-w-sm">
+//           <Typography.Title level={2} className="text-center">
+//             Hey, dude! Log in to your account!
+//           </Typography.Title>
+//         </div>
+
+//         <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
+//           <Form name="loginForm" onFinish={onFinish} layout="vertical">
+//             <Form.Item
+//               label="Email Address"
+//               name="email"
+//               rules={[
+//                 { required: true, message: "Please enter your email!" },
+//                 { type: "email", message: "Please enter a valid email!" },
+//               ]}
+//             >
+//               <Input prefix={<MailOutlined />} placeholder="Enter your email" />
+//             </Form.Item>
+
+//             <Form.Item
+//               label="Password"
+//               name="password"
+//               rules={[
+//                 { required: true, message: "Please enter your password!" },
+//               ]}
+//             >
+//               <Input.Password
+//                 prefix={<LockOutlined />}
+//                 placeholder="Enter your password"
+//               />
+//             </Form.Item>
+
+//             <Form.Item>
+//               <Button
+//                 loading={confirmLoading}
+//                 type="primary"
+//                 htmlType="submit"
+//                 className="w-full"
+//                 style={{ backgroundColor: "#38bdf8", borderColor: "#38bdf8" }}
+//               >
+//                 Sign in
+//               </Button>
+//             </Form.Item>
+//           </Form>
+//         </div>
+
+//         {/* 🔔 List Notifikasi */}
+//         <div>
+//           <h3>🔔 Notifikasi:</h3>
+//           <ul>
+//             {notifications.map((notif, index) => (
+//               <li key={index}>{notif}</li>
+//             ))}
+//           </ul>
+//         </div>
+//       </div>
+//     </>
+//   );
+// };
+
+// export default LoginPage;
