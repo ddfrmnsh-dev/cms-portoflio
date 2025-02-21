@@ -10,9 +10,9 @@ const SelectReusable = ({
   loading = false,
   disabled = false,
 }) => {
-  console.log("cek data select", value);
   return (
     <Select
+      // mode="multiple"
       value={value} // Mengikat value dengan Form
       onChange={onChange} // Menangani perubahan value
       placeholder={placeholder}
