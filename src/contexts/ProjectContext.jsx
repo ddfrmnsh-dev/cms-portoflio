@@ -1,5 +1,5 @@
 import { useEffect, createContext, useState, useCallback } from "react";
-import projectClient from "../api/projectApi";
+import projectApi from "../api/projectApi";
 import { message } from "antd";
 
 export const ProjectContext = createContext();
@@ -16,7 +16,7 @@ export const ProjectProvider = ({ children }) => {
   const fetchProjects = useCallback(
     async (page = 1, limit = 5) => {
       try {
-        const response = await projectClient.getAllProject({ page, limit });
+        const response = await projectApi.getAllProject({ page, limit });
         setProjects(response.data.projects);
         setTotalProject(response.data.total);
         if (!hasFetched) {
@@ -30,6 +30,46 @@ export const ProjectProvider = ({ children }) => {
     [hasFetched]
   );
 
+  const createProject = async (project) => {
+    try {
+      const response = await projectApi.createProject(project);
+      setProjects([...projects, response.data]);
+    } catch (error) {
+      console.log("Failed to create project:", error);
+    }
+  };
+
+  const updateProject = async (id, updatedProject) => {
+    try {
+      await projectApi.updateProject(id, updatedProject);
+      setProjects(
+        projects.map((project) =>
+          project.id === id ? { ...project, ...updatedProject } : project
+        )
+      );
+    } catch (error) {
+      console.log("Failed to update project:", error);
+    }
+  };
+
+  const deleteProject = async (id) => {
+    try {
+      await projectApi.deleteProject(id);
+      setProjects(projects.filter((project) => project.id !== id));
+    } catch (error) {
+      console.log("Failed to delete project:", error);
+    }
+  };
+
+  const findProjectByIds = async (id) => {
+    try {
+      const response = await projectApi.findProjectById(id);
+      setSelectedProject(response.data);
+    } catch (error) {
+      console.log("Failed to fetch project:", error);
+    }
+  };
+
   useEffect(() => {
     fetchProjects(currentPage, limit); // Call fetchProjects with the current page and limit
   }, [currentPage, limit, fetchProjects, hasFetched]);
@@ -42,6 +82,13 @@ export const ProjectProvider = ({ children }) => {
         setCurrentPage,
         currentPage,
         totalProject,
+        createProject,
+        updateProject,
+        deleteProject,
+        findProjectByIds,
+        selectedProject,
+        fetchProjects,
+        setTotalProject,
       }}
     >
       {contextHolder}

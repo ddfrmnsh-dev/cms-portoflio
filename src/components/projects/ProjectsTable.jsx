@@ -2,23 +2,18 @@ import { useContext, useEffect, useState } from "react";
 import AddProjectModal from "./AddProjectModal";
 import { motion } from "framer-motion";
 import { Search } from "lucide-react";
-import axios from "axios";
-import { message } from "antd";
+import { message, Form, Modal } from "antd";
 import PaginationReusable from "../common/PanginationReusable";
 import { ProjectContext } from "../../contexts/ProjectContext";
+import UpdateProjectModal from "./UpdateProjectModal";
 
 const ProjectsTable = () => {
-  const baseUrl = import.meta.env.VITE_BASE_URL;
-  const [projectDatas, setProjectDatas] = useState([]);
   const [filteredProjects, setFilteredProjects] = useState([]);
   const [confirmLoading, setConfirmLoading] = useState(false);
-  const [hasFetched, setHasFetched] = useState(false);
-  // const [currentPage, setCurrentPage] = useState(1);
-  // const [limit, setLimit] = useState(5);
-  const [total, setTotal] = useState(0);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-
+  const [isModalUpdateVisible, setIsModalUpdateVisible] = useState(false);
+  const [selectedProjectId, setSelectedProjectId] = useState(null);
   const {
     currentPage,
     projects,
@@ -26,37 +21,23 @@ const ProjectsTable = () => {
     setLimit,
     setCurrentPage,
     totalProject,
+    findProjectByIds,
+    selectedProject,
+    deleteProject,
+    setTotalProject,
+    fetchProjects,
   } = useContext(ProjectContext);
-  // const getProject = async (page = 1, limit = 5) => {
-  //   try {
-  //     const response = await axios.get(`${baseUrl}/api/v1/project`, {
-  //       params: { page, limit },
-  //     });
-
-  //     setProjectDatas(response.data.data.projects);
-  //     setTotal(response.data.data.total);
-
-  //     if (!hasFetched) {
-  //       message.success("Data’s locked and loaded!");
-  //       setHasFetched(true);
-  //     }
-
-  //     setFilteredProjects(response.data.data.projects);
-  //   } catch (error) {
-  //     console.log(error);
-  //     message.error("Uh-oh! Failed to fetch the data.");
-  //   }
-  // };
-
-  // useEffect(() => {
-  //   getProject(currentPage, limit);
-  // }, [currentPage, limit]);
+  const [form] = Form.useForm();
 
   useEffect(() => {
     if (projects && Array.isArray(projects)) {
       setFilteredProjects(projects);
     }
   }, [projects]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, []);
 
   const handlePageChange = (page, limit) => {
     setCurrentPage(page);
@@ -82,6 +63,43 @@ const ProjectsTable = () => {
     setIsModalVisible(true);
   };
 
+  const showModalUpdate = async (projectId) => {
+    form.resetFields();
+    setIsModalUpdateVisible(true);
+    setSelectedProjectId(projectId);
+
+    await findProjectByIds(projectId);
+  };
+
+  const handleDelete = (projectId) => {
+    Modal.confirm({
+      title: "Are you sure you want to delete this project?",
+      content: "This action cannot be undone.",
+      okText: "Yes, Delete",
+      cancelText: "Cancel",
+      onOk: async () => {
+        try {
+          await deleteProject(projectId);
+          message.success("Project deleted successfully!");
+
+          const newTotals = totalProject - 1;
+          setTotalProject(newTotals);
+
+          const maxPage = Math.ceil(newTotals / limit);
+
+          if (currentPage > maxPage) {
+            setCurrentPage(maxPage);
+          } else if (newTotals < limit && currentPage > 1) {
+            setCurrentPage(1);
+          }
+
+          fetchProjects(currentPage, limit);
+        } catch (error) {
+          message.error("Failed to delete project.");
+        }
+      },
+    });
+  };
   return (
     <motion.div
       className="bg-gray-800 bg-opacity-50 backdrop-blur-md shadow-lg rounded-xl p-6 border border-gray-700"
@@ -172,12 +190,15 @@ const ProjectsTable = () => {
               </td>
 
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-                <button className="text-indigo-400 hover:text-indigo-300 mr-2">
+                <button
+                  className="text-indigo-400 hover:text-indigo-300 mr-2"
+                  onClick={() => showModalUpdate(project.id)}
+                >
                   Edit
                 </button>
                 <button
                   className="text-red-400 hover:text-red-300"
-                  onClick={() => handleDelete(project.id)}
+                  onClick={() => handleDelete(project?.id)}
                 >
                   Delete
                 </button>
@@ -196,6 +217,15 @@ const ProjectsTable = () => {
         confirmLoad={confirmLoading}
         isOpen={isModalVisible}
         onCancel={handleCancel}
+      />
+
+      <UpdateProjectModal
+        confirmLoad={confirmLoading}
+        idProject={selectedProjectId}
+        isOpen={isModalUpdateVisible}
+        onCancel={() => setIsModalUpdateVisible(false)}
+        projectData={selectedProject}
+        form={form}
       />
     </motion.div>
   );
