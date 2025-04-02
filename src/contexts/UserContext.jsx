@@ -21,6 +21,7 @@ export const UserProvider = ({ children }) => {
 
       try {
         const response = await userApi.getAllUser({ page, limit });
+        console.log("response", response);
         setUsers(response.data.user);
         setTotalUser(response.data.total);
 

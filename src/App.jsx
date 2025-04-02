@@ -14,6 +14,7 @@ import SignOutPage from "./pages/SignOutPage";
 import ClientsPage from "./pages/ClientPage";
 import ProjectsPage from "./pages/ProjectPage";
 import { useAppProviders } from "./hooks/useAppProviders";
+import ArticlesPage from "./pages/ArticlesPage";
 function App() {
   const Providers = useAppProviders;
   return (
@@ -36,7 +37,7 @@ function App() {
         {/* <Route path="/sales" element={<PrivateRoute component={SalesPage} />} /> */}
         <Route
           path="/articles"
-          element={<PrivateRoute component={SalesPage} />}
+          element={<PrivateRoute component={ArticlesPage} />}
         />
         <Route
           path="/orders"

@@ -15,13 +15,12 @@ const OverviewPage = () => {
   const [notifications, setNotifications] = useState([]);
 
   useEffect(() => {
-    socket.on("notification", (notif) => {
-      console.log("🔔 New Notification:", notif);
-      console.log("🔔 New Notification from WebSocket:", notif);
-      setNotifications(notif);
-      message.info(`🔔 Notifikasi: ${notif}`);
-    });
-
+    // socket.on("notification", (notif) => {
+    //   console.log("🔔 New Notification:", notif);
+    //   console.log("🔔 New Notification from WebSocket:", notif);
+    //   setNotifications(notif);
+    //   message.info(`🔔 Notifikasi: ${notif}`);
+    // });
     // return () => {
     //   socket.off("notification");
     // };

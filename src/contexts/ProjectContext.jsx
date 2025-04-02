@@ -1,10 +1,12 @@
 import { useEffect, createContext, useState, useCallback } from "react";
 import projectApi from "../api/projectApi";
 import { message } from "antd";
+import { useAuth } from "../hooks/useAuth";
 
 export const ProjectContext = createContext();
 
 export const ProjectProvider = ({ children }) => {
+  const { isAuthenticated } = useAuth();
   const [projects, setProjects] = useState([]);
   const [totalProject, setTotalProject] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
@@ -71,8 +73,10 @@ export const ProjectProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    fetchProjects(currentPage, limit); // Call fetchProjects with the current page and limit
-  }, [currentPage, limit, fetchProjects, hasFetched]);
+    if (isAuthenticated) {
+      fetchProjects(currentPage, limit); // Call fetchProjects with the current page and limit
+    }
+  }, [isAuthenticated, currentPage, limit, fetchProjects, hasFetched]);
   return (
     <ProjectContext.Provider
       value={{
